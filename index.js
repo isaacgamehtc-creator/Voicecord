@@ -1,5 +1,14 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
+const http = require('http');
+
+// 1. Crear un servidor web falso para engañar a Render y UptimeRobot
+http.createServer((req, res) => {
+    res.write("Bot 24/7 Activo");
+    res.end();
+}).listen(process.env.PORT || 3000, () => {
+    console.log("Servidor web listo para recibir tráfico de UptimeRobot.");
+});
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
