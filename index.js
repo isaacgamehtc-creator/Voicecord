@@ -23,7 +23,7 @@ client.on('ready', () => {
             guildId: client.guilds.cache.first().id,
             adapterCreator: client.guilds.cache.first().voiceAdapterCreator,
             selfMute: false,
-            selfDeaf: true
+            selfDeaf: false
         });
         console.log("Conectado exitosamente al canal de voz.");
     } catch (error) {
