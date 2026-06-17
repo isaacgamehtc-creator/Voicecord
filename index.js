@@ -1,45 +1,47 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+const { joinVoiceChannel } = require('@discordjs/voice');
 const http = require('http');
 
-// Servidor web para UptimeRobot
+// Servidor web obligatorio para Render y UptimeRobot
 http.createServer((req, res) => {
     res.write("Bot 24/7 Activo");
     res.end();
-}).listen(process.env.PORT || 3000);
+}).listen(process.env.PORT || 3000, () => {
+    console.log("Servidor web listo para recibir tráfico de UptimeRobot.");
+});
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
 
-// Función central para conectar al canal
+// Función de conexión ultra estable usando IDs fijos
 function conectarVoz() {
     try {
-        joinVoiceChannel({
+        const connection = joinVoiceChannel({
             channelId: process.env.VOICE_CHANNEL_ID,
-            guildId: client.guilds.cache.first().id,
-            adapterCreator: client.guilds.cache.first().voiceAdapterCreator,
+            guildId: process.env.GUILD_ID, // <--- Ahora usa tu ID directo sin fallar en caché
+            adapterCreator: client.guilds.cache.get(process.env.GUILD_ID).voiceAdapterCreator,
             selfMute: false,
             selfDeaf: false
         });
-        console.log("Intentando conectar/reconectar al canal de voz...");
+        console.log("¡Éxito! El bot ha enviado la orden de entrada al canal de voz.");
     } catch (error) {
-        console.error("Error en la conexión de voz:", error);
+        console.error("Error crítico al intentar conectar al canal de voz:", error);
     }
 }
 
 client.on('ready', () => {
-    console.log(`¡Bot conectado como ${client.user.tag}!`);
+    console.log(`¡Bot conectado con éxito a Discord como ${client.user.tag}!`);
     conectarVoz();
 });
 
-// ¡EL TRUCO ANTIPANAS! Si tu amigo lo saca, el bot detecta el cambio de estado y vuelve a entrar
+// Filtro Anti-Desconexiones de amigos
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (oldState.member.id === client.user.id && newState.channelId === null) {
-        console.log("El bot fue desconectado del canal. Reconectando en 5 segundos...");
+        console.log("Se detectó una expulsión del canal de voz. Reconectando en 5 segundos...");
         setTimeout(() => {
             conectarVoz();
-        }, 5000); // Espera 5 segundos para limpiar la caché de Discord y vuelve a entrar
+        }, 5000);
     }
 });
 
