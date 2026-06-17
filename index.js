@@ -1,22 +1,19 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel } = require('@discordjs/voice');
+const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 const http = require('http');
 
-// 1. Crear un servidor web falso para engañar a Render y UptimeRobot
+// Servidor web para UptimeRobot
 http.createServer((req, res) => {
     res.write("Bot 24/7 Activo");
     res.end();
-}).listen(process.env.PORT || 3000, () => {
-    console.log("Servidor web listo para recibir tráfico de UptimeRobot.");
-});
+}).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
 
-client.on('ready', () => {
-    console.log(`¡Bot conectado como ${client.user.tag}!`);
-    
+// Función central para conectar al canal
+function conectarVoz() {
     try {
         joinVoiceChannel({
             channelId: process.env.VOICE_CHANNEL_ID,
@@ -25,9 +22,24 @@ client.on('ready', () => {
             selfMute: false,
             selfDeaf: false
         });
-        console.log("Conectado exitosamente al canal de voz.");
+        console.log("Intentando conectar/reconectar al canal de voz...");
     } catch (error) {
-        console.error("Error al conectar al canal de voz:", error);
+        console.error("Error en la conexión de voz:", error);
+    }
+}
+
+client.on('ready', () => {
+    console.log(`¡Bot conectado como ${client.user.tag}!`);
+    conectarVoz();
+});
+
+// ¡EL TRUCO ANTIPANAS! Si tu amigo lo saca, el bot detecta el cambio de estado y vuelve a entrar
+client.on('voiceStateUpdate', (oldState, newState) => {
+    if (oldState.member.id === client.user.id && newState.channelId === null) {
+        console.log("El bot fue desconectado del canal. Reconectando en 5 segundos...");
+        setTimeout(() => {
+            conectarVoz();
+        }, 5000); // Espera 5 segundos para limpiar la caché de Discord y vuelve a entrar
     }
 });
 
